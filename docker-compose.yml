@@ -17,7 +17,7 @@ services:
       - notes-network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      timeout: 10s
+      timeout: 20s
       retries: 10
 
   backend:
@@ -34,6 +34,7 @@ services:
       - notes-network
     volumes:
       - ./backend/src:/app/src
+      - backend_logs:/app
     command: sh -c "npx prisma migrate deploy && npm start"
 
   frontend:
@@ -46,8 +47,74 @@ services:
     networks:
       - notes-network
 
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: notes-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - notes-network
+    depends_on:
+      - backend
+
+  # Grafana
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: notes-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SECURITY_ADMIN_USER: admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - notes-network
+    depends_on:
+      - prometheus
+
+  # Elasticsearch
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    container_name: notes-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - notes-network
+
+  # Kibana
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.4
+    container_name: notes-kibana
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+    depends_on:
+      - elasticsearch
+    networks:
+      - notes-network
+
 volumes:
   db_data:
+  backend_logs:
+  prometheus_data:
+  grafana_data:
+  elasticsearch_data:
 
 networks:
   notes-network:

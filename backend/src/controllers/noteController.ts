@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../db";
+import { notesCreated, notesDeleted } from "../metrics";
 
 import { getUniqueTags, cleanupUnusedTags, handleServerError, validateId } from "../utils/controllerUtils";
 
@@ -121,6 +122,8 @@ export const createNote = async (req: Request, res: Response) => {
             }
         });
 
+        notesCreated.inc(); // ← ДОБАВЛЕНО
+
         res.status(201).json(formatNote(newNote));
     } catch (error) {
         handleServerError(res, error, "Failed to create note");
@@ -207,6 +210,8 @@ export const deleteNote = async (req: Request, res: Response) => {
             where: { id }
         });
 
+        notesDeleted.inc(); // ← ДОБАВЛЕНО
+
         // Cleanup: Delete tags no longer associated with any notes
         await cleanupUnusedTags();
 
@@ -220,12 +225,12 @@ export const deleteNote = async (req: Request, res: Response) => {
 export const updatePin = async (req: Request, res: Response) => {
     const id = parseInt(req.params.id);
     const isPinned = req.body.isPinned === true || req.body.isPinned === 'true';
-    
+
 
     if (isNaN(id)) {
         res.status(400).json({ error: "Invalid note ID" });
         return;
-    }    
+    }
 
     try {
         console.log("Updating note:", { id, isPinned });
