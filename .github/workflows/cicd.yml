@@ -25,16 +25,19 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Detect changes
-        uses: dorny/paths-filter@v3
-        id: filter
         with:
-          filters: |
-            backend:
-              - 'backend/**'
-            frontend:
-              - 'frontend/**'
+          fetch-depth: 2
+
+    - name: Detect changes
+      uses: dorny/paths-filter@v3
+      id: filter
+      with:
+        base: HEAD~1
+        filters: |
+          backend:
+            - 'backend/**'
+          frontend:
+            - 'frontend/**'
 
   # ================= BACKEND =================
   backend:
