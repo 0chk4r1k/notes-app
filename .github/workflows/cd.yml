@@ -1,8 +1,13 @@
 name: Deploy to Kubernetes
 
 on:
-  push:
-    branches: [prod]
+  workflow_run:
+    workflows: ["Build Artifacts"]
+    types:
+      - completed
+
+permissions:
+  contents: read
 
 env:
   REGISTRY: ghcr.io
@@ -10,10 +15,12 @@ env:
 
 jobs:
   deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set kubeconfig
         run: |
@@ -23,13 +30,13 @@ jobs:
       - name: Deploy backend
         run: |
           kubectl set image deployment/backend \
-            backend=$REGISTRY/$IMAGE_NAME/backend:${{ github.sha }} \
+            backend=$REGISTRY/$IMAGE_NAME/backend:${{ github.event.workflow_run.head_sha }} \
             -n notes
 
       - name: Deploy frontend
         run: |
           kubectl set image deployment/frontend \
-            frontend=$REGISTRY/$IMAGE_NAME/frontend:${{ github.sha }} \
+            frontend=$REGISTRY/$IMAGE_NAME/frontend:${{ github.event.workflow_run.head_sha }} \
             -n notes
 
       - name: Rollout status
