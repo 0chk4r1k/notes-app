@@ -3,10 +3,13 @@ kind: Service
 metadata:
   name: backend
   namespace: notes
+  labels:
+    app: backend
 spec:
   selector:
     app: backend
   ports:
-    - port: 5000
+    - name: http
+      port: 5000
       targetPort: 5000
   type: ClusterIP
