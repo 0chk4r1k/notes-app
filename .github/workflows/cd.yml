@@ -1,0 +1,46 @@
+name: Deploy to Kubernetes
+
+on:
+  workflow_run:
+    workflows: ["Build Artifacts"]
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
+
+      # ================= BACKEND =================
+      - name: Update backend image
+        run: |
+          kubectl set image deployment/backend \
+            backend=$REGISTRY/$IMAGE_NAME/backend:${{ github.sha }} \
+            -n notes
+
+      # ================= FRONTEND =================
+      - name: Update frontend image
+        run: |
+          kubectl set image deployment/frontend \
+            frontend=$REGISTRY/$IMAGE_NAME/frontend:${{ github.sha }} \
+            -n notes
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/backend -n notes
+          kubectl rollout status deployment/frontend -n notes
