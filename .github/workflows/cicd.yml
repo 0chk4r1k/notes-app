@@ -1,4 +1,4 @@
-name: Build Artifacts
+name: CI/CD Pipeline
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
     paths:
       - "backend/**"
       - "frontend/**"
-      - ".github/workflows/ci.yml"
+      - ".github/workflows/**"
 
 permissions:
   contents: read
@@ -17,8 +17,11 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  backend:
+
+  # ================= BUILD BACKEND =================
+  build-backend:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -39,8 +42,10 @@ jobs:
         run: |
           docker push $REGISTRY/$IMAGE_NAME/backend:${{ github.sha }}
 
-  frontend:
+  # ================= BUILD FRONTEND =================
+  build-frontend:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -60,3 +65,35 @@ jobs:
       - name: Push frontend
         run: |
           docker push $REGISTRY/$IMAGE_NAME/frontend:${{ github.sha }}
+
+  # ================= DEPLOY =================
+  deploy:
+    needs:
+      - build-backend
+      - build-frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
+
+      - name: Deploy backend
+        run: |
+          kubectl set image deployment/backend \
+            backend=$REGISTRY/$IMAGE_NAME/backend:${{ github.sha }} \
+            -n notes
+
+      - name: Deploy frontend
+        run: |
+          kubectl set image deployment/frontend \
+            frontend=$REGISTRY/$IMAGE_NAME/frontend:${{ github.sha }} \
+            -n notes
+
+      - name: Rollout status
+        run: |
+          kubectl rollout status deployment/backend -n notes
+          kubectl rollout status deployment/frontend -n notes
