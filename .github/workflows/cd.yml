@@ -1,10 +1,8 @@
 name: Deploy to Kubernetes
 
 on:
-  workflow_run:
-    workflows: ["Build Artifacts"]
-    types:
-      - completed
+  push:
+    branches: [prod]
 
 permissions:
   contents: read
