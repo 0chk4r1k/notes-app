@@ -18,7 +18,6 @@ env:
 
 jobs:
   backend:
-    if: contains(github.event.head_commit.message, 'backend') || github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -34,16 +33,13 @@ jobs:
         run: |
           docker build \
             -t $REGISTRY/$IMAGE_NAME/backend:${{ github.sha }} \
-            -t $REGISTRY/$IMAGE_NAME/backend:prod \
             ./backend
 
       - name: Push backend
         run: |
           docker push $REGISTRY/$IMAGE_NAME/backend:${{ github.sha }}
-          docker push $REGISTRY/$IMAGE_NAME/backend:prod
 
   frontend:
-    if: contains(github.event.head_commit.message, 'frontend') || github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -59,10 +55,8 @@ jobs:
         run: |
           docker build \
             -t $REGISTRY/$IMAGE_NAME/frontend:${{ github.sha }} \
-            -t $REGISTRY/$IMAGE_NAME/frontend:prod \
             ./frontend
 
       - name: Push frontend
         run: |
           docker push $REGISTRY/$IMAGE_NAME/frontend:${{ github.sha }}
-          docker push $REGISTRY/$IMAGE_NAME/frontend:prod
