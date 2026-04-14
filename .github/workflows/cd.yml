@@ -5,6 +5,7 @@ on:
     workflows: ["Build Artifacts"]
     types:
       - completed
+    branches: [prod]
 
 permissions:
   contents: read
