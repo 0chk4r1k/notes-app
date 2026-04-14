@@ -17,9 +17,29 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
 
-  # ================= BUILD BACKEND =================
-  build-backend:
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+
+  # ================= BACKEND =================
+  backend:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -32,18 +52,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build backend
+      - name: Build & Push backend
         run: |
           docker build \
             -t $REGISTRY/$IMAGE_NAME/backend:${{ github.sha }} \
             ./backend
 
-      - name: Push backend
-        run: |
           docker push $REGISTRY/$IMAGE_NAME/backend:${{ github.sha }}
 
-  # ================= BUILD FRONTEND =================
-  build-frontend:
+  # ================= FRONTEND =================
+  frontend:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -56,21 +76,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build frontend
+      - name: Build & Push frontend
         run: |
           docker build \
             -t $REGISTRY/$IMAGE_NAME/frontend:${{ github.sha }} \
             ./frontend
 
-      - name: Push frontend
-        run: |
           docker push $REGISTRY/$IMAGE_NAME/frontend:${{ github.sha }}
 
   # ================= DEPLOY =================
   deploy:
-    needs:
-      - build-backend
-      - build-frontend
+    needs: [backend, frontend, detect-changes]
     runs-on: ubuntu-latest
 
     steps:
@@ -82,18 +98,23 @@ jobs:
           echo "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
 
       - name: Deploy backend
+        if: needs.detect-changes.outputs.backend == 'true'
         run: |
           kubectl set image deployment/backend \
             backend=$REGISTRY/$IMAGE_NAME/backend:${{ github.sha }} \
             -n notes
 
       - name: Deploy frontend
+        if: needs.detect-changes.outputs.frontend == 'true'
         run: |
           kubectl set image deployment/frontend \
             frontend=$REGISTRY/$IMAGE_NAME/frontend:${{ github.sha }} \
             -n notes
 
-      - name: Rollout status
-        run: |
-          kubectl rollout status deployment/backend -n notes
-          kubectl rollout status deployment/frontend -n notes
+      - name: Wait rollout backend
+        if: needs.detect-changes.outputs.backend == 'true'
+        run: kubectl rollout status deployment/backend -n notes
+
+      - name: Wait rollout frontend
+        if: needs.detect-changes.outputs.frontend == 'true'
+        run: kubectl rollout status deployment/frontend -n notes
