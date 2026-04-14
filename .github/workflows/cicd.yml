@@ -90,7 +90,7 @@ jobs:
 
   # ================= DEPLOY =================
   deploy:
-    needs: [backend, frontend, detect-changes]
+    needs: detect-changes
     runs-on: ubuntu-latest
 
     steps:
