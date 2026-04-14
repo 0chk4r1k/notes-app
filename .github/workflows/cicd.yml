@@ -28,17 +28,17 @@ jobs:
         with:
           fetch-depth: 0
 
-    - name: Detect changes
-      uses: dorny/paths-filter@v3
-      id: filter
-      with:
-        base: ${{ github.event.before }}
-        ref: ${{ github.sha }}
-        filters: |
-          backend:
-            - 'backend/**'
-          frontend:
-            - 'frontend/**'
+      - name: Detect changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          base: ${{ github.event.before }}
+          ref: ${{ github.sha }}
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
 
   # ================= BACKEND =================
   backend:
@@ -90,7 +90,7 @@ jobs:
 
   # ================= DEPLOY =================
   deploy:
-    needs: detect-changes
+    needs: [backend, frontend, detect-changes]
     runs-on: ubuntu-latest
 
     steps:
