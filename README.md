@@ -1,188 +1,184 @@
-# Notes App
+# Notes App — Development Environment
 
-A **Full Stack Notes App** built with **React**, **Node.js (Express)**, **TypeScript**, **Prisma**, and **MySQL**. 
-This application allows users to create, manage, and organize notes with categories, tags, pinning, search, and even speech-to-text transcription features. 
-The architecture is modular, scalable, and follows modern best practices for full stack development.
+## 📌 Назначение ветки
 
----
+Ветка `dev` используется для разработки, локального тестирования с помощью Docker и отладки приложения.
 
-## Table of Contents
+## 🧱 Структура проекта
 
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-  - [Frontend](#frontend)
-  - [Backend](#backend)
-  - [Database](#database)
-- [Project Structure](#project-structure)
-- [Setup & Installation](#setup--installation)
-  - [Backend](#backend-setup)
-  - [Frontend](#frontend-setup)
-- [Usage](#usage)
-- [API Endpoints](#api-endpoints)
-- [Development & Contribution](#development--contribution)
+```bash
+.
+├── backend/              # Backend (Node.js + Express + Prisma)
+├── frontend/             # Frontend (React + TypeScript)
+├── monitoring/           # Конфигурация мониторинга (Prometheus, Grafana)
+├── docker-compose.yml    # Локальная инфраструктура
+├── requirements.txt      # Python (Whisper / STT)
+└── .github/workflows/    # CI/CD
+```
 
 ---
 
-## Features
-
-- **Create, Read, Update, Delete (CRUD) Notes**
-- **Categorize** notes (General, Work, Personal, Other)
-- **Tagging**: Add, remove, and organize notes via tags
-- **Pin Notes**: Mark notes as important
-- **Search & Filter**: Search by title, content, tags, or category
-- **Sidebar Navigation**: Quickly filter notes by category
-- **Speech-to-Text**: Transcribe audio input into notes (integrates with Python Whisper)
-- **Responsive UI**: Built with CSS for a modern, clean look
-- **TypeScript**: End-to-end type safety in both frontend and backend
-- **RESTful API**: Well-structured endpoints for all features
-
----
-
-## Tech Stack
-
-### Frontend
-
-- **React** (with Hooks): For building a reactive, component-based UI
-- **TypeScript**: Type-safe, maintainable codebase
-- **CSS**: Custom, responsive design
-- **FontAwesome**: Rich iconography for UI clarity
+## ⚙️ Технологический стек
 
 ### Backend
 
-- **Node.js** with **Express**: API server for handling requests
-- **TypeScript**: Ensures type safety and maintainability in backend code
-- **Prisma ORM**: Type-safe, high-performance database access and migrations
-- **CORS**, **Multer**: For cross-origin resource sharing and file uploads
-- **Python**: Used for speech-to-text integration via [OpenAI Whisper](https://github.com/openai/whisper) (run as a subprocess)
+* Node.js (Express)
+* TypeScript
+* Prisma ORM
+* MySQL
 
-### Database
+### Frontend
 
-- **MySQL**: Relational database for persistent storage of notes, tags, and note-tag relationships
+* React
+* TypeScript
+* CSS
+
+### Дополнительно
+
+* Python (Speech-to-Text / Whisper)
+* Prometheus (метрики)
+* Grafana (визуализация)
+* Elasticsearch (логирование / поиск)
 
 ---
 
-## Project Structure
+## 🚀 Запуск проекта (основной способ)
 
-```
-notes-app/
-│
-├── backend/
-│   ├── src/
-│   │   ├── controllers/
-│   │   ├── routes/
-│   │   ├── utils/
-│   │   ├── db.ts
-│   │   └── index.ts
-│   ├── prisma/
-│   │   └── schema.prisma
-│   ├── package.json
-│   └── tsconfig.json
-│
-├── frontend/
-│   ├── public/
-│   ├── src/
-│   │   ├── hooks/
-│   │   ├── types/
-│   │   ├── utils/
-│   │   ├── App.tsx
-│   │   ├── index.tsx
-│   │   └── App.css
-│   ├── package.json
-│   └── tsconfig.json
-│
-└── README.md
+### 1. Требования
+
+* Docker
+* Docker Compose
+
+---
+
+### 2. Запуск
+
+```bash
+docker compose up --build
 ```
 
 ---
 
-## Setup & Installation
+### 3. Доступ к сервисам
 
-### Backend Setup
-
-1. **Install dependencies:**
-   ```sh
-   cd backend
-   npm install
-   ```
-
-2. **Configure Environment Variables:**
-   - Create a `.env` file in `/backend` and add your MySQL connection string:
-     ```
-     DATABASE_URL="mysql://USER:PASSWORD@HOST:PORT/DATABASE"
-     ```
-
-3. **Setup Database with Prisma:**
-   ```sh
-   npx prisma migrate dev --name init
-   ```
-
-4. **Run the backend server:**
-   ```sh
-   npm start
-   ```
-   - The backend API will run on [http://localhost:5000](http://localhost:5000)
-
-5. **(Optional) Speech-to-text setup:**
-   - Set up a Python virtual environment and install [OpenAI Whisper](https://github.com/openai/whisper) and required dependencies. The backend will invoke the Python script for transcription.
-
-### Frontend Setup
-
-1. **Install dependencies:**
-   ```sh
-   cd frontend
-   npm install
-   ```
-
-2. **Run the React development server:**
-   ```sh
-   npm start
-   ```
-   - The app will run on [http://localhost:3000](http://localhost:3000)
-
-3. **Note:** The frontend expects the backend to be running at `localhost:5000`. You may need to adjust proxy settings as needed.
+| Сервис      | URL                   |
+| ----------- | --------------------- |
+| Frontend    | http://localhost:3000 |
+| Backend API | http://localhost:5000 |
+| Prometheus  | http://localhost:9090 |
+| Grafana     | http://localhost:3001 |
 
 ---
 
-## Usage
+### 4. База данных
 
-- **Add a Note**: Fill out the form and click "Add". Use tags and categories to organize notes.
-- **Edit/Delete/Pin**: Click on a note to edit, delete, or toggle pin status.
-- **Search**: Use the search bar to filter notes.
-- **Sidebar**: Filter notes by categories.
-- **Speech-to-Text**: Use the microphone icon to dictate notes (requires Python Whisper setup).
+* Host: `localhost:3306`
+* DB: `notes_db`
+* User: `notes_user`
+* Password: `notes_password`
+
+Изменения через переменные окружения внутри `docker-compose.yml`.
+---
+
+## 🔁 Как это работает
+
+При запуске:
+
+1. Поднимается MySQL
+2. Backend:
+
+   * ждёт БД
+   * выполняет `prisma migrate deploy`
+   * запускается
+3. Frontend подключается к backend
+4. Поднимается мониторинг:
+
+   * Prometheus
+   * Grafana
 
 ---
 
-## API Endpoints
+## 🧪 Разработка
 
-| Method | Endpoint                | Description                         |
-|--------|-------------------------|-------------------------------------|
-| GET    | `/api/notes`            | Fetch all notes                     |
-| POST   | `/api/notes`            | Create a new note                   |
-| PUT    | `/api/notes/:id`        | Update a note                       |
-| DELETE | `/api/notes/:id`        | Delete a note                       |
-| PATCH  | `/api/notes/:id/pin`    | Pin or unpin a note                 |
-| POST   | `/api/speech-to-text`   | Upload audio for transcription      |
+### Горячая перезагрузка backend
 
+```bash
+backend/src → проброшен как volume
+```
 
-Refer to the backend source for detailed request/response shapes.
+👉 изменения применяются без пересборки контейнера
 
 ---
 
-## Development & Contribution
+### Пересборка
 
-1. Fork the repo and create your feature branch (`git checkout -b feature/fooBar`)
-2. Commit your changes (`git commit -am 'Add some feature'`)
-3. Push to the branch (`git push origin feature/fooBar`)
-4. Open a Pull Request
-
-**Code Style:** Please use TypeScript and follow existing conventions.
+```bash
+docker compose up --build
+```
 
 ---
 
-## Acknowledgments
+### Остановка
 
-- [OpenAI Whisper](https://github.com/openai/whisper) for speech-to-text technology
-- [Prisma](https://www.prisma.io/)
-- [React](https://react.dev/)
-- [FontAwesome](https://fontawesome.com/)
+```bash
+docker compose down
+```
+
+---
+
+## 📊 Мониторинг
+
+### Prometheus
+
+* собирает метрики backend
+* конфиг: `monitoring/prometheus.yml`
+
+---
+
+### Grafana
+
+* доступ: `admin / admin`
+* преднастроенные дашборды
+
+---
+
+## 🔍 Логи
+
+```bash
+docker-compose logs -f backend
+docker-compose logs -f frontend
+```
+
+---
+
+## 🔄 Workflow разработки
+
+```text
+feature → dev → prod
+```
+
+### Процесс:
+
+1. Создание feature-ветки
+2. Разработка
+3. PR → `dev`
+4. Тестирование
+5. Merge → `prod` (запуск деплоя)
+
+---
+
+## 🏷️ Версионирование
+
+Используется:
+
+* `commit SHA` как версия образа
+
+Пример:
+
+```bash
+ghcr.io/<repo>/frontend:<sha>
+```
+* быстрый цикл разработки
+* observability "из коробки"
+
+---
